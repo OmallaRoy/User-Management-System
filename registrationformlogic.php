@@ -42,7 +42,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $stmt->bind_param("ssss", $username, $email, $password, $target_file);
 
             if ($stmt->execute()) {
-                echo "Registration successful!";
+                $_SESSION['id'] = $conn->insert_id; // Store user ID in session
+                $_SESSION['username'] = $username;
+
+                header("Location: dashboard.php"); // **Redirect to dashboard**
+                exit();
             } else {
                 echo "Error: " . $stmt->error;
             }
