@@ -2,7 +2,7 @@
 session_start();
 include 'database.php';
 
-// Enable error reporting for debugging
+// Enable error reporting for debugging (disable in production)
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
@@ -10,6 +10,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = trim($_POST['emailaddress']);
     $password = trim($_POST['pwd']);
     $remember = isset($_POST['rememberme']);
+
+    // Validate input
+    if (empty($email) || empty($password)) {
+        die("Email and password are required.");
+    }
 
     // Fetch user from database
     $stmt = $conn->prepare("SELECT id, username, password FROM users WHERE email = ?");
@@ -25,11 +30,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if (password_verify($password, $hashed_password)) {
             $_SESSION['id'] = $id;
             $_SESSION['username'] = $username;
+            $_SESSION['just_logged_in'] = true; // Flag for welcome popup
 
-            // Set cookies if 'Remember Me' is checked
+            // Set "Remember Me" cookies securely (valid for 7 days)
             if ($remember) {
-                setcookie('user_email', $email, time() + (30 * 24 * 60 * 60), "/", "", false, true);
-                setcookie('user_token', password_hash($password, PASSWORD_DEFAULT), time() + (30 * 24 * 60 * 60), "/", "", false, true);
+                setcookie('user_email', $email, time() + (7 * 24 * 60 * 60), "/", "", false, true);
+                setcookie('user_token', hash_hmac('sha256', $id . 'secretkey', 'customsalt'), time() + (7 * 24 * 60 * 60), "/", "", false, true);
             } else {
                 setcookie('user_email', '', time() - 3600, "/");
                 setcookie('user_token', '', time() - 3600, "/");
